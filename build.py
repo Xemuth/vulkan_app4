@@ -37,9 +37,10 @@ if __name__ == "__main__":
         if args.build is not None:
             generate_cmd = generate_cmd + ["-DCMAKE_BUILD_TYPE=" + camel_case(args.build)]
 
-        if args.validation_layer is not None:
+        if args.validation_layer is not None and args.validation_layer:
             generate_cmd = generate_cmd + ["-DENABLE_VALIDATION_LAYER=ON"]
-        if args.logger is not None:
+
+        if args.logger is not None and args.logger:
             generate_cmd = generate_cmd + ["-DENABLE_LOGGER=ON"]
         
         if args.reconfigure and os.path.exists("./out"):
