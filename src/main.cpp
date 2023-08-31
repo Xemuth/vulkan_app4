@@ -1,5 +1,8 @@
+#include "engine.hpp"
 #include "glfw_window.hpp"
 #include "vulkan_graphic.hpp"
+
+#include <memory>
 
 using namespace vkapp;
 
@@ -20,13 +23,17 @@ int main()
 {
     auto vec = get_glfw_vk_required_extension();
 
-    VulkanGraphic v{vec, std::vector<const char*>{}};
+    auto vulkan = std::make_unique<VulkanGraphic>(vec, std::vector<const char*>{});
+    auto window = std::make_unique<GlfwWindow>();
 
-    GlfwWindow window(v);
+    Engine engine(std::move(vulkan), std::move(window));
 
-    window.init();
-    window.run();
-    window.clean();
+    for (;;)
+    {
+        auto result = engine.run();
+        if (result != Engine::no_error)
+            break;
+    }
 
     return 0;
 }

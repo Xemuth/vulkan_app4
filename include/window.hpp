@@ -1,19 +1,20 @@
-#ifndef GRAPHIC_HEADER
-#define GRAPHIC_HEADER
+#ifndef WINDOW_HEADER
+#define WINDOW_HEADER
 
 #include <cstdint>
 
 namespace vkapp
 {
 
-class Graphic
+class Window
 {
   public:
     using Error                   = unsigned int;
     const unsigned int   no_error = 0;
-    static const uint8_t ERROR_ID = 2;
+    static const uint8_t ERROR_ID = 1;
 
-    virtual void run() = 0;
+    virtual const char* get_error_str(Error code) = 0;
+    virtual Error       render()                  = 0;
 
   protected:
 #if defined(ENABLE_LOGGER)

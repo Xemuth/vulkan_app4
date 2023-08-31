@@ -25,9 +25,6 @@ class VulkanGraphic : public Graphic
     VkDevice                 _device          = VK_NULL_HANDLE;
     std::vector<const char*> _extensions;
     std::vector<const char*> _layers;
-#if defined(ENABLE_LOGGER)
-    static std::shared_ptr<spdlog::logger> _logger;
-#endif
 
   public:
     VulkanGraphic(const std::vector<const char*>& extensions, const std::vector<const char*>& validation_layers);
