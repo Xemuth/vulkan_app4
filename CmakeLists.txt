@@ -5,14 +5,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(Vulkan)
 
-project(vulkan_app3 C CXX)
+project(vulkan_app4 C CXX)
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/third_party/CmakeLists.txt")
 
 set(ENABLE_VALIDATION_LAYER CACHE BOOL OFF)
 set(ENABLE_LOGGER CACHE BOOL OFF)
 
-file(GLOB_RECURSE vulkan_app3_src
+file(GLOB_RECURSE vulkan_app4_src
     CONFIGURE_DEPENDS 
     "src/*.h"
     "src/*.cpp"
@@ -24,28 +24,28 @@ file(GLOB_RECURSE vulkan_app3_src
     "include/*.hpp"
 )
 
-add_executable(vulkan_app3 ${vulkan_app3_src})
+add_executable(vulkan_app4 ${vulkan_app4_src})
 
-set_target_properties(vulkan_app3
+set_target_properties(vulkan_app4
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/../bin/${CMAKE_BUILD_TYPE}"
 )
 
-target_compile_definitions(vulkan_app3 PUBLIC
+target_compile_definitions(vulkan_app4 PUBLIC
     GLFW_INCLUDE_VULKAN
 )
 
 if(${ENABLE_VALIDATION_LAYER})
-    add_compile_definitions(vulkan_app3 PUBLIC -DENABLE_VALIDATION_LAYER)
+    add_compile_definitions(vulkan_app4 PUBLIC -DENABLE_VALIDATION_LAYER)
 endif()
 
 if(${ENABLE_LOGGER})
-    add_compile_definitions(vulkan_app3 PUBLIC -DENABLE_LOGGER)
+    add_compile_definitions(vulkan_app4 PUBLIC -DENABLE_LOGGER)
 endif()
 
-target_compile_options(vulkan_app3 PUBLIC -nostdlib)
+target_compile_options(vulkan_app4 PUBLIC -nostdlib)
 
-target_include_directories(vulkan_app3 PUBLIC
+target_include_directories(vulkan_app4 PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     ${Vulkan_INCLUDE_DIRS}
     glfw
@@ -53,7 +53,7 @@ target_include_directories(vulkan_app3 PUBLIC
     ${glm_include_path}
 )
 
-target_link_libraries(vulkan_app3 PUBLIC 
+target_link_libraries(vulkan_app4 PUBLIC 
     glfw
     spdlog
 )

@@ -49,7 +49,7 @@ if __name__ == "__main__":
         subprocess.check_call(generate_cmd)
         subprocess.check_call(["cmake", "--build", "./out"])
         if args.execute:
-            path_to_exe = "./bin/" + args.build + "/vulkan_app3.exe"
+            path_to_exe = "./bin/" + args.build + "/vulkan_app4.exe"
             subprocess.check_call([path_to_exe], cwd="./bin/" + args.build + "/")
         exit(0)
     except Exception as e:

@@ -7,6 +7,7 @@ int main()
 {
 
     vkapp::Engine engine;
+    engine._vk_layers_names.push_back("VK_LAYER_KHRONOS_validation");
     engine.run();
     if (vkapp::ErrorHandler::is_app_error())
     {
