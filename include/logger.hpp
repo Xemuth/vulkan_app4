@@ -20,7 +20,7 @@ class MasterLogger
         {
             std::vector<spdlog::sink_ptr> log_output;
             log_output.push_back(std::make_shared<spdlog::sinks::wincolor_stdout_sink_mt>());
-            log_output.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("vulkan_app3.txt"));
+            log_output.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("vulkan_app4.txt"));
             master_logger = std::make_shared<spdlog::logger>("master_logger", begin(log_output), end(log_output));
             master_logger->set_level(spdlog::level::debug);
         }
