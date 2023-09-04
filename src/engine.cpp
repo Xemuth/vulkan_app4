@@ -179,6 +179,114 @@ void Engine::init_vulkan()
         return;
     }
 #endif
+
+    result = pick_up_physical_device();
+    if (result == EngineError::vk_failed_to_find_physical_device)
+    {
+        ErrorHandler::raise_error(EngineError::vk_failed_to_find_physical_device);
+        return;
+    }
+    if (result != VK_SUCCESS)
+    {
+        LOGGER(error("Failed to enumerate VkPhysicalDevice: {}", string_VkResult(result)));
+        ErrorHandler::raise_error(EngineError::vk_failed_to_find_physical_device);
+        return;
+    }
+
+    auto queues = find_queue_families();
+    if (!queues.is_complete())
+    {
+        LOGGER(error("Failed to find all required queues"));
+        queues.log_unfound_queue();
+        ErrorHandler::raise_error(EngineError::vk_failed_to_find_queue);
+        return;
+    }
+}
+Engine::QueueFamilyIndices Engine::find_queue_families()
+{
+    LOGGER(debug("Looking up for all required queue"));
+    Engine::QueueFamilyIndices indices;
+    uint32_t                   queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(_physical_device, &queue_family_count, nullptr);
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(_physical_device, &queue_family_count, queue_families.data());
+    int i = 0;
+    for (uint32_t i = 0; i < queue_families.size(); i++)
+    {
+        if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            LOGGER(debug("graphics_family queue found"));
+            indices.graphics_family = i;
+        }
+        if (indices.is_complete())
+        {
+            LOGGER(debug("All required queue found"));
+            break;
+        }
+    }
+    return indices;
+}
+VkResult Engine::pick_up_physical_device()
+{
+    LOGGER(debug("Looking up for a physical device"));
+    uint32_t device_count = 0;
+    auto     result       = vkEnumeratePhysicalDevices(_instance, &device_count, nullptr);
+    if (result != VK_SUCCESS)
+        return result;
+    if (device_count == 0)
+        return static_cast<VkResult>(EngineError::vk_failed_to_find_physical_device);
+    std::vector<VkPhysicalDevice> devices(device_count);
+    vkEnumeratePhysicalDevices(_instance, &device_count, devices.data());
+
+    uint32_t         best_score = 0;
+    VkPhysicalDevice best_device;
+
+    for (auto& phd : devices)
+    {
+        auto score = get_device_score(phd);
+        if (score > best_score)
+        {
+            best_device = phd;
+            best_score  = score;
+        }
+    }
+    if (best_score == 0)
+    {
+        LOGGER(error("No suitable physical device available"));
+        return static_cast<VkResult>(EngineError::vk_failed_to_find_physical_device);
+    }
+    _physical_device = best_device;
+#if defined(ENABLE_LOGGER)
+    VkPhysicalDeviceProperties device_properties;
+    vkGetPhysicalDeviceProperties(_physical_device, &device_properties);
+    LOGGER(debug("{} selected", device_properties.deviceName));
+#endif
+    return VK_SUCCESS;
+}
+uint32_t Engine::get_device_score(VkPhysicalDevice& phd)
+{
+    uint32_t                   score = 0;
+    VkPhysicalDeviceProperties device_properties;
+    vkGetPhysicalDeviceProperties(phd, &device_properties);
+
+    VkPhysicalDeviceFeatures device_features;
+    vkGetPhysicalDeviceFeatures(phd, &device_features);
+
+    // Discrete GPUs have a significant performance advantage
+    if (device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+    {
+        score += 1000;
+    }
+    // Maximum possible size of textures affects graphics quality
+    score += device_properties.limits.maxImageDimension2D;
+    // Application can't function without geometry shaders
+    if (!device_features.geometryShader)
+    {
+        LOGGER(debug("{}: {} score", device_properties.deviceName, 0));
+        return 0;
+    }
+    LOGGER(debug("{}: {} score", device_properties.deviceName, score));
+    return score;
 }
 VkResult Engine::setup_debug_callback()
 {
@@ -229,5 +337,13 @@ void Engine::cleanup()
     glfwDestroyWindow(_window);
     glfwTerminate();
 }
-
+bool Engine::QueueFamilyIndices::is_complete()
+{
+    return graphics_family.has_value();
+}
+void Engine::QueueFamilyIndices::log_unfound_queue()
+{
+    if (graphics_family.has_value())
+        LOGGER(error("graphics_family queue not found"));
+}
 }   // namespace vkapp
