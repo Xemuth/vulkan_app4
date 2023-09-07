@@ -193,14 +193,61 @@ void Engine::init_vulkan()
         return;
     }
 
+    result = create_logical_device();
+    if (result != VK_SUCCESS)
+    {
+        if (result == EngineError::vk_failed_to_find_queue)
+            ErrorHandler::raise_error(EngineError::vk_failed_to_find_queue);
+        else
+        {
+            ErrorHandler::raise_error(EngineError::vk_failed_to_create_logical_device);
+            LOGGER(error("Failed to create logical device: {}", string_VkResult(result)));
+        }
+        return;
+    }
+}
+VkResult Engine::create_logical_device()
+{
+
     auto queues = find_queue_families();
     if (!queues.is_complete())
     {
         LOGGER(error("Failed to find all required queues"));
         queues.log_unfound_queue();
-        ErrorHandler::raise_error(EngineError::vk_failed_to_find_queue);
-        return;
+        return static_cast<VkResult>(EngineError::vk_failed_to_find_queue);
     }
+
+    LOGGER(debug("Creating logical device"));
+    VkDeviceQueueCreateInfo queue_create_info{};
+    queue_create_info.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.queueFamilyIndex = queues.graphics_family.value();
+    queue_create_info.queueCount       = 1;
+    auto queue_priority                = 1.0f;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    VkPhysicalDeviceFeatures device_features{};
+
+    VkDeviceCreateInfo create_info{};
+    create_info.sType                 = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    create_info.enabledExtensionCount = 0;
+
+#if defined(ENABLE_VALIDATION_LAYER)
+    create_info.enabledLayerCount   = static_cast<uint32_t>(_vk_layers_names.size());
+    create_info.ppEnabledLayerNames = _vk_layers_names.data();
+#else
+    create_info.enabledLayerCount   = 0;
+#endif
+    create_info.queueCreateInfoCount = 1;
+    create_info.pQueueCreateInfos    = &queue_create_info;
+
+    auto result = vkCreateDevice(_physical_device, &create_info, nullptr, &_logical_device);
+    if (result != VK_SUCCESS)
+        return result;
+
+    // Fetching all queue
+    vkGetDeviceQueue(_logical_device, queues.graphics_family.value(), 0, &_grahics_queue);
+
+    return result;
 }
 Engine::QueueFamilyIndices Engine::find_queue_families()
 {
@@ -325,6 +372,7 @@ void Engine::cleanup()
     LOGGER(debug("Cleaning Engine..."));
     VkResult result = VK_SUCCESS;
 
+    vkDestroyDevice(_logical_device, nullptr);
 #if defined(ENABLE_VALIDATION_LAYER) && defined(ENABLE_LOGGER)
     result = clear_debug_callback();
     if (result != VK_SUCCESS)
